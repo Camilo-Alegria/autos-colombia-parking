@@ -1,0 +1,43 @@
+<section class="card max-w-3xl">
+  <h2 class="text-lg font-semibold text-white">Registrar salida</h2>
+  <p class="mt-1 text-sm text-slate-400">Busca por placa o por celda. El tiempo de permanencia se calcula al instante.</p>
+
+  <form class="mt-5 grid gap-3 sm:grid-cols-[160px_1fr_auto]" (ngSubmit)="buscar()">
+    <select class="field" name="modo" [(ngModel)]="modo">
+      <option value="placa">Por placa</option>
+      <option value="celda">Por celda</option>
+    </select>
+    <input
+      class="field"
+      name="criterio"
+      [(ngModel)]="criterio"
+      [placeholder]="modo === 'placa' ? 'ABC123' : 'C01'"
+      autocomplete="off"
+    />
+    <button class="btn-primary" type="submit">Buscar</button>
+  </form>
+
+  @if (detalle(); as info) {
+    <div class="mt-6 space-y-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+      <div>
+        <p class="text-sm text-slate-400">Vehículo en parqueadero</p>
+        <p class="text-xl font-semibold">{{ info.vehiculo.placa }} · Celda {{ info.celda?.codigo }}</p>
+        <p class="text-sm text-slate-300">{{ info.cliente.nombre }} · {{ info.vehiculo.marca }} {{ info.vehiculo.color }}</p>
+      </div>
+      <dl class="grid gap-3 sm:grid-cols-2 text-sm">
+        <div>
+          <dt class="text-slate-400">Ingreso</dt>
+          <dd>{{ formatFecha(info.registroActivo?.fechaIngreso) }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-400">Tiempo de permanencia</dt>
+          <dd class="text-2xl font-semibold text-sky-300">{{ permanencia().texto }}</dd>
+          <p class="text-xs text-slate-500">{{ permanencia().horas }} horas y {{ permanencia().minutos }} minutos</p>
+        </div>
+      </dl>
+      <button class="btn-danger" type="button" [disabled]="enviando()" (click)="registrarSalida()">
+        Registrar Salida y Liberar Celda
+      </button>
+    </div>
+  }
+</section>

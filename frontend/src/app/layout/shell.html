@@ -1,0 +1,55 @@
+<div class="min-h-dvh bg-[#0F172A] text-slate-100">
+  <header class="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Autos Colombia</p>
+          <h1 class="text-xl font-semibold text-white sm:text-2xl">Parqueadero mensual</h1>
+        </div>
+        @if (store.cargando()) {
+          <span class="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">Sincronizando…</span>
+        }
+      </div>
+      <nav class="flex flex-wrap gap-2">
+        @for (tab of [
+          { path: '/dashboard', label: 'Dashboard & Celdas' },
+          { path: '/entrada', label: 'Registrar Entrada' },
+          { path: '/salida', label: 'Registrar Salida' },
+          { path: '/editar', label: 'Editar / Reasignar' },
+        ]; track tab.path) {
+          <a
+            [routerLink]="tab.path"
+            routerLinkActive
+            #rla="routerLinkActive"
+            class="rounded-full border px-4 py-2 text-sm font-medium transition"
+            [class]="rla.isActive
+              ? 'border-sky-400 bg-sky-500 text-slate-950'
+              : 'border-slate-700 text-slate-200 hover:border-sky-400 hover:text-white'"
+          >
+            {{ tab.label }}
+          </a>
+        }
+      </nav>
+    </div>
+  </header>
+
+  @if (store.aviso(); as aviso) {
+    <div class="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        class="flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
+        [class]="aviso.tipo === 'ok'
+          ? 'border-emerald-700 bg-emerald-950/60 text-emerald-100'
+          : 'border-red-700 bg-red-950/60 text-red-100'"
+      >
+        <p>{{ aviso.texto }}</p>
+        <button type="button" class="text-xs uppercase tracking-wide opacity-70 hover:opacity-100" (click)="store.limpiarAviso()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  }
+
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <router-outlet />
+  </main>
+</div>

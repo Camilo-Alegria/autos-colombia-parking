@@ -1,0 +1,75 @@
+<section class="card max-w-3xl">
+  <h2 class="text-lg font-semibold text-white">Registrar entrada</h2>
+  <p class="mt-1 text-sm text-slate-400">Busca la placa. Si no existe, se abre el registro de nuevo vehículo y propietario.</p>
+
+  <form class="mt-5 flex flex-col gap-3 sm:flex-row" (ngSubmit)="buscar()">
+    <input
+      class="field"
+      name="placa"
+      [(ngModel)]="placa"
+      placeholder="Placa (ABC123)"
+      maxlength="10"
+      autocomplete="off"
+    />
+    <button class="btn-primary" type="submit" [disabled]="ocupado()">Buscar placa</button>
+  </form>
+
+  @if (detalle(); as info) {
+    <div class="mt-6 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+      <p class="text-sm text-slate-400">Vehículo encontrado</p>
+      <p class="text-xl font-semibold">{{ info.vehiculo.placa }} · {{ info.tipo.nombre }}</p>
+      <p class="text-sm text-slate-300">{{ info.vehiculo.marca }} {{ info.vehiculo.color }}</p>
+      <p class="mt-2 text-sm">{{ info.cliente.nombre }} · {{ info.cliente.documento }}</p>
+      <p class="text-xs text-slate-400">Tarifa {{ formatTarifa(info.tipo.tarifa) }}</p>
+
+      @if (!info.registroActivo) {
+        <label class="mt-4 block text-sm text-slate-300">Celda libre</label>
+        <select class="field mt-1" name="idCelda" [(ngModel)]="idCelda">
+          <option [ngValue]="null">Selecciona una celda</option>
+          @for (celda of celdasLibres(); track celda.idCelda) {
+            <option [ngValue]="celda.idCelda">{{ celda.codigo }}</option>
+          }
+        </select>
+        <button class="btn-primary mt-4" type="button" [disabled]="enviando()" (click)="registrarEntrada()">
+          Registrar ingreso
+        </button>
+      }
+    </div>
+  }
+</section>
+
+@if (modalAbierto()) {
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4">
+    <div class="card w-full max-w-lg">
+      <h3 class="text-lg font-semibold text-white">Registro de Nuevo Vehículo y Propietario</h3>
+      <p class="mt-1 text-sm text-slate-400">La placa no está en el sistema. Completa el suscriptor y la tarifa mensual.</p>
+      <form class="mt-4 grid gap-3 sm:grid-cols-2" (ngSubmit)="registrarNuevo()">
+        <input class="field" name="nombre" [(ngModel)]="nuevo.nombre" placeholder="Nombre del propietario" required />
+        <input class="field" name="documento" [(ngModel)]="nuevo.documento" placeholder="Documento" required />
+        <input class="field" name="telefono" [(ngModel)]="nuevo.telefono" placeholder="Teléfono" required />
+        <input class="field" name="correo" [(ngModel)]="nuevo.correo" placeholder="Correo" type="email" required />
+        <input class="field" name="placaNueva" [(ngModel)]="nuevo.placa" placeholder="Placa" required />
+        <input class="field" name="marca" [(ngModel)]="nuevo.marca" placeholder="Marca" required />
+        <input class="field sm:col-span-2" name="color" [(ngModel)]="nuevo.color" placeholder="Color" required />
+        <fieldset class="sm:col-span-2">
+          <legend class="mb-2 text-sm text-slate-300">Tarifa</legend>
+          <div class="grid gap-2 sm:grid-cols-2">
+            @for (tipo of store.tipos(); track tipo.idTipo) {
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-700 bg-slate-800 px-3 py-3 text-sm">
+                <input type="radio" name="idTipo" [value]="tipo.idTipo" [(ngModel)]="nuevo.idTipo" />
+                <span>
+                  <span class="block font-semibold">{{ tipo.nombre }}</span>
+                  <span class="text-slate-400">{{ formatTarifa(tipo.tarifa) }}</span>
+                </span>
+              </label>
+            }
+          </div>
+        </fieldset>
+        <div class="mt-2 flex justify-end gap-2 sm:col-span-2">
+          <button class="btn-ghost" type="button" (click)="cerrarModal()">Cancelar</button>
+          <button class="btn-primary" type="submit" [disabled]="enviando()">Guardar suscriptor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

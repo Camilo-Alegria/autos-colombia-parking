@@ -1,0 +1,15 @@
+# Entorno virtual de Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Frontend Angular
+node_modules/
+dist/
+.angular/
+
+# Archivos de entorno y configuración
+.env
+.vscode/
+.DS_Store
