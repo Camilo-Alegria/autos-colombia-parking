@@ -1,40 +1,52 @@
 # 🚗 Autos Colombia - Sistema de Gestión de Parqueadero
 
-Sistema de información web Full-Stack desarrollado para la gestión operativa del parqueadero **Autos Colombia**, correspondiente a la **Iteración 1: Control de Entrada y Salida de Vehículos**.
+Sistema de información web Full-Stack desarrollado para la gestión operativa y administrativa del parqueadero **Autos Colombia**, integrando los alcances de la **Iteración 1 (Control de Entrada y Salida de Vehículos)** y la **Iteración 2 (Gestión de Usuarios, Control de Acceso RBAC, Gestión de Celdas y Auditoría)**.
 
-La plataforma permite registrar ingresos y salidas de vehículos, asignar celdas de parqueadero según el tipo de vehículo y monitorear la ocupación del establecimiento mediante un panel de control interactivo.
+La plataforma permite controlar el acceso mediante roles diferenciados, administrar el catálogo de celdas, registrar ingresos y salidas en tiempo real con validación de mensualidad y monitorear la ocupación del establecimiento mediante un panel interactivo sincronizado.
 
 ---
 
 ## 📌 Características principales
 
-- **Control de capacidad:** Gestión de 80 celdas de parqueadero, distribuidas en 70 para carros y 10 para motos.
-- **Registro de ingresos:** Selección y asignación de celdas disponibles según la categoría del vehículo.
-- **Tarifas mensuales:** Tarifa de $250.000 COP para carros y $100.000 COP para motos.
-- **Liberación de celdas:** Registro de salidas mediante la placa del vehículo o la celda asignada, actualizando la disponibilidad en tiempo real.
-- **Tablero de ocupación (Dashboard):** Visualización de indicadores sobre el total de vehículos ingresados y la disponibilidad de celdas.
-- **Edición y reasignación:** Corrección de los datos de propietarios y vehículos, así como cambio de celdas ocupadas.
+### Operación de Portería (Iteración 1)
+
+- **Control de capacidad base:** Gestión inicial de 80 celdas parametrizadas (70 para carros y 10 para motos), ampliable desde el módulo administrativo.
+- **Registro de ingresos con validación:** Asignación de celdas disponibles según el tipo de vehículo, bloqueando el ingreso si la mensualidad está en estado `PENDIENTE` y aplicando control de concurrencia pesimista (`SELECT FOR UPDATE`) para evitar asignaciones simultáneas.
+- **Tarifas mensuales:** Parametrización de $250.000 COP/mes para carros y $100.000 COP/mes para motos.
+- **Liberación de celdas:** Registro de salidas por placa o celda asignada, liberando el espacio de inmediato.
+- **Tablero de ocupación en tiempo real (Dashboard):** Indicadores dinámicos y mapa visual de celdas actualizado automáticamente mediante WebSockets sin recargar la página.
+- **Edición y reasignación:** Corrección de datos de propietarios y vehículos (restringida a administradores) y reasignación de celdas ocupadas.
+
+### Seguridad y Administración (Iteración 2)
+
+- **Autenticación y control de acceso por roles (RBAC):** Inicio de sesión seguro con contraseñas cifradas mediante `bcrypt` y tokens `JWT`, diferenciando permisos entre **Administrador** y **Operador**.
+- **Gestión de usuarios (Empleados):** Creación, consulta y desactivación (borrado lógico) de cuentas de operadores y administradores, preservando su trazabilidad histórica.
+- **Gestión de celdas:** Creación, consulta con filtros, edición y eliminación controlada de celdas, validando códigos únicos e integridad referencial (impidiendo borrar celdas ocupadas o con historial activo).
+- **Historial de auditoría:** Registro automático de cada movimiento crítico (ingresos, salidas, reasignaciones, creación o modificación de usuarios y celdas), incluyendo usuario responsable, fecha y hora, detalle e IP de origen.
 
 ---
 
 ## 🛠️ Arquitectura y tecnologías
 
-El proyecto implementa una arquitectura de tres capas que separa la interfaz de usuario, la lógica de negocio y el almacenamiento de datos.
+El proyecto implementa una arquitectura modular por capas que desacopla la presentación, la lógica de negocio, el acceso a datos y la persistencia.
 
 ### Frontend
-- **Angular:** Framework para el desarrollo de interfaces web dinámicas.
-- **TypeScript:** Lenguaje de programación utilizado para la lógica del frontend.
-- **HTML5 y CSS3:** Tecnologías para la estructura y el diseño de la interfaz.
+
+- **Angular:** Framework para el desarrollo de la interfaz web reactiva.
+- **TypeScript:** Lenguaje principal para componentes, guardias de rutas, interceptores JWT y servicios.
+- **HTML5, CSS3 y Tailwind CSS:** Diseño de interfaz adaptable con tema oscuro (*Dark Slate*).
+- **WebSockets:** Cliente en tiempo real para sincronizar el estado de ocupación entre sesiones.
 
 ### Backend
-- **Python:** Lenguaje de programación para la lógica del servidor.
-- **FastAPI:** Framework para la construcción de una API REST.
-- **SQLAlchemy:** ORM para la interacción con la base de datos relacional.
+
+- **Python y FastAPI:** API RESTful estructurada por capas (`api`, `services`, `repositories`, `models`, `schemas`, `core`).
+- **SQLAlchemy:** ORM para el mapeo objeto-relacional y control transaccional.
+- **Seguridad (JWT y Passlib/Bcrypt):** Autenticación basada en tokens Bearer y hash seguro de contraseñas.
 
 ### Base de datos
-- **PostgreSQL:** Sistema de gestión de bases de datos relacionales.
-- **Nombre de la base de datos:** `autos_colombia_db`.
-- **Integridad referencial:** Gestión de las relaciones entre las entidades del sistema.
+
+- **PostgreSQL:** Motor de base de datos relacional (`autos_colombia_db`).
+- **Integridad referencial:** Relaciones normalizadas entre usuarios, clientes, vehículos, tipos de vehículo, celdas, registros de entrada y salida e historial de auditoría.
 
 ---
 
@@ -43,16 +55,14 @@ El proyecto implementa una arquitectura de tres capas que separa la interfaz de 
 Antes de instalar y ejecutar el proyecto, asegúrate de contar con las siguientes herramientas:
 
 1. **Git:** Para clonar el repositorio y gestionar el control de versiones.
-2. **Node.js:** Versión 18 o superior, compatible con las dependencias del proyecto.
+2. **Node.js:** Versión 18 o superior.
 3. **Angular CLI:** Herramienta de línea de comandos de Angular.
 4. **Python:** Versión 3.10 o superior.
 5. **Pip:** Administrador de paquetes de Python.
 6. **PostgreSQL:** Versión 14 o superior.
 7. **pgAdmin 4:** Herramienta gráfica para administrar PostgreSQL.
 
-### Instalación de Angular CLI
-
-Si todavía no tienes Angular CLI instalado, ejecuta el siguiente comando:
+Para instalar Angular CLI:
 
 ```bash
 npm install -g @angular/cli
@@ -62,11 +72,9 @@ npm install -g @angular/cli
 
 ## 🚀 Guía de instalación y puesta en funcionamiento
 
-Sigue los pasos en orden para ejecutar la aplicación en un entorno local.
+Sigue los siguientes pasos para ejecutar la aplicación en un entorno local.
 
 ### 1. Clonar el repositorio
-
-Abre una terminal y ejecuta los siguientes comandos:
 
 ```bash
 git clone https://github.com/Camilo-Alegria/autos-colombia-parking.git
@@ -75,19 +83,17 @@ cd autos-colombia-parking
 
 ### 2. Configurar la base de datos PostgreSQL
 
-1. Abre pgAdmin 4 o accede a PostgreSQL mediante la consola `psql`.
-2. Crea la base de datos ejecutando la siguiente instrucción SQL:
+Abre pgAdmin 4 o accede a PostgreSQL mediante la consola `psql`.
+
+Crea la base de datos ejecutando la siguiente instrucción SQL:
 
 ```sql
 CREATE DATABASE autos_colombia_db;
 ```
 
-3. Verifica que el servicio de PostgreSQL esté activo y escuchando en el puerto predeterminado `5432`.
-4. Configura los parámetros de conexión a la base de datos en el backend, según la configuración definida en el proyecto.
+Verifica que el servicio de PostgreSQL esté activo en el puerto predeterminado `5432`.
 
-**Nota:** Asegúrate de que el usuario, la contraseña, el host y el nombre de la base de datos coincidan con los parámetros de conexión configurados en la aplicación.
-
-### 3. Configurar y ejecutar el backend (FastAPI)
+### 3. Configurar y ejecutar el Backend (FastAPI)
 
 Abre una terminal y accede a la carpeta del backend:
 
@@ -95,37 +101,43 @@ Abre una terminal y accede a la carpeta del backend:
 cd backend
 ```
 
-#### Crear el entorno virtual
+**Crear el entorno virtual:**
 
 ```bash
 python -m venv venv
 ```
 
-#### Activar el entorno virtual
+**Activar el entorno virtual:**
 
-**Windows (PowerShell):**
+Windows (PowerShell):
 
 ```powershell
 .\venv\Scripts\Activate.ps1
 ```
 
-**Linux o macOS:**
+Linux o macOS:
 
 ```bash
 source venv/bin/activate
 ```
 
-#### Instalar las dependencias
+**Instalar las dependencias:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### Iniciar el servidor
+**Configurar las variables de entorno:**
+
+Crea un archivo `.env` tomando como referencia el archivo `.env.example` y configura tus credenciales de PostgreSQL (`DATABASE_URL`) y la clave secreta para JWT (`SECRET_KEY`).
+
+**Iniciar el servidor:**
 
 ```bash
 uvicorn app.main:app --reload
 ```
+
+Al iniciar por primera vez, el sistema crea automáticamente las tablas, las 80 celdas base y los usuarios iniciales mediante `seed.py`.
 
 Una vez iniciado, el backend estará disponible en:
 
@@ -133,9 +145,7 @@ Una vez iniciado, el backend estará disponible en:
 - **Documentación interactiva (Swagger):** http://127.0.0.1:8000/docs
 - **Documentación alternativa (ReDoc):** http://127.0.0.1:8000/redoc
 
-La documentación interactiva permite consultar y probar los endpoints disponibles en la API.
-
-### 4. Configurar y ejecutar el frontend (Angular)
+### 4. Configurar y ejecutar el Frontend (Angular)
 
 Abre una segunda terminal, manteniendo el backend en ejecución, y accede a la carpeta del frontend:
 
@@ -143,81 +153,105 @@ Abre una segunda terminal, manteniendo el backend en ejecución, y accede a la c
 cd frontend
 ```
 
-#### Instalar las dependencias
+**Instalar las dependencias:**
 
 ```bash
 npm install
 ```
 
-#### Iniciar el servidor de desarrollo
+**Iniciar la aplicación:**
 
 ```bash
 ng serve --open
 ```
 
-La aplicación estará disponible en el navegador en la siguiente dirección:
+La aplicación estará disponible en el navegador en:
 
-http://localhost:4200/
+- **Frontend Web:** http://localhost:4200/
 
-**Nota:** Si Angular no abre el navegador automáticamente, puedes ingresar manualmente a la dirección indicada.
+---
+
+## 🔐 Acceso y roles de prueba
+
+Al inicializar la base de datos, el sistema habilita cuentas base para validar los permisos RBAC.
+
+| Rol | Usuario | Contraseña | Permisos principales |
+|---|---|---|---|
+| Administrador | `admin` | `admin123` | Acceso total: Dashboard, entradas y salidas, gestión de usuarios, gestión de celdas (CRUD), edición de vehículos e historial de auditoría. |
+| Operador | Creado desde Admin | Asignada al crear | Operación de portería: Dashboard en tiempo real, registro de entradas y salidas, registro de nuevos vehículos y consulta de celdas disponibles. |
 
 ---
 
 ## 📂 Estructura del repositorio
 
-La estructura general del proyecto está organizada de la siguiente manera:
-
 ```text
 AutosColombia/
+│
 ├── backend/
 │   ├── app/
-│   │   ├── main.py          # Punto de entrada y rutas de la API
-│   │   ├── database.py      # Configuración de la conexión a PostgreSQL
-│   │   └── models.py        # Modelos ORM de la base de datos
-│   └── requirements.txt     # Dependencias de Python
+│   │   ├── api/                 # Endpoints REST (auth, usuarios, celdas, registros, auditoría, websockets)
+│   │   ├── core/                # Configuración, conexión BD, seguridad JWT, seed inicial y WebSocket manager
+│   │   ├── models/              # Modelos ORM SQLAlchemy
+│   │   ├── repositories/        # Capa de acceso a datos y consultas transaccionales
+│   │   ├── schemas/             # Esquemas Pydantic para validación de entrada y salida (DTO)
+│   │   ├── services/            # Lógica de negocio y reglas de validación
+│   │   └── main.py              # Punto de entrada de FastAPI y registro de routers
+│   │
+│   └── requirements.txt         # Dependencias de Python
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── app/             # Componentes, servicios y modelos
-│   │   └── assets/          # Recursos estáticos
-│   └── package.json         # Dependencias y scripts de Node.js
+│   │   ├── app/
+│   │   │   ├── layout/          # Estructura principal y navegación dinámica por rol
+│   │   │   ├── models/          # Interfaces y modelos TypeScript
+│   │   │   ├── pages/           # Vistas (login, dashboard, entrada, salida, editar, admin)
+│   │   │   ├── services/        # Servicios HTTP, interceptor JWT y cliente WebSocket
+│   │   │   ├── app.config.ts    # Configuración de proveedores e interceptores
+│   │   │   └── app.routes.ts    # Rutas y protección por roles
+│   │   └── assets/              # Recursos estáticos
+│   │
+│   └── package.json             # Dependencias y scripts de Node.js
 │
-├── .gitignore               # Archivos y carpetas excluidos de Git
-└── README.md                # Documentación del proyecto
+├── .env.example                 # Plantilla de variables de entorno
+├── .gitignore                   # Archivos y carpetas excluidos de Git
+└── README.md                    # Documentación del proyecto
 ```
 
 ---
 
-## 💰 Tarifas del servicio
+## 💰 Tarifas y capacidad base
 
-| Tipo de vehículo | Capacidad | Tarifa mensual |
+| Tipo de vehículo | Capacidad inicial | Tarifa mensual |
 |---|---:|---:|
 | Carros | 70 celdas | $250.000 COP |
 | Motos | 10 celdas | $100.000 COP |
 | **Total** | **80 celdas** | — |
 
-Las tarifas corresponden a los valores definidos para el proyecto y pueden utilizarse como referencia para la parametrización del sistema.
+**Nota:** Desde el módulo de Gestión de Celdas del panel administrativo es posible incorporar nuevas celdas o modificar las existentes, manteniendo las restricciones de integridad.
 
 ---
 
-## 🎯 Objetivo de la iteración 1
+## 🎯 Alcance de las iteraciones
 
-Desarrollar un sistema de información web que permita administrar el ingreso y la salida de vehículos del parqueadero Autos Colombia, controlar la disponibilidad de las celdas y facilitar el seguimiento de la ocupación mediante una interfaz intuitiva.
+### Iteración 1 — Control de Entrada y Salida de Vehículos
 
-Esta primera iteración se centra en las operaciones esenciales de control de entrada y salida, la asignación de espacios y la consulta de la ocupación del parqueadero.
+Implementación del flujo operativo de ingreso y salida de vehículos, validación del estado de pago mensual, asignación de celdas por tipo de vehículo, reasignación de espacios y tablero de ocupación en tiempo real.
+
+### Iteración 2 — Gestión de Usuarios y Gestión de Celdas
+
+Incorporación de autenticación JWT con control de acceso basado en roles (RBAC), administración del ciclo de vida de empleados (creación y baja lógica), administración completa del catálogo de celdas y módulo de auditoría transaccional.
 
 ---
 
 ## ✒️ Autor
 
 - **Desarrollador:** Jhojanth Camilo Alegria Escobar
-- **Materia:** Ingeniería de Software.
-- **Institución:** IU Digital de Antioquia.
-- **Proyecto:** Autos Colombia - Sistema de Gestión de Parqueadero.
+- **Materia:** Ingeniería de Software
+- **Institución:** IU Digital de Antioquia
+- **Proyecto:** Autos Colombia - Sistema de Gestión de Parqueadero
 
 ---
 
 ## 📄 Licencia
 
 Este proyecto fue desarrollado con fines académicos. Si deseas distribuirlo o permitir su reutilización, puedes agregar un archivo `LICENSE` con las condiciones correspondientes.
-
