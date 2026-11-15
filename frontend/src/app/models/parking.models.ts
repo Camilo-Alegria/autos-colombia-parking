@@ -50,6 +50,7 @@ export interface Dashboard {
   vehiculosRegistrados: number;
   vehiculosIngresados: number;
   celdasDisponibles: number;
+  totalCeldas: number;
   defaultOperarioId: number | null;
   celdas: CeldaDetalle[];
 }

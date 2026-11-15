@@ -3,7 +3,7 @@
     <article class="card">
       <p class="text-sm text-slate-400">Vehículos Registrados</p>
       <p class="mt-2 text-4xl font-semibold text-white">{{ data.vehiculosRegistrados }}</p>
-      <p class="mt-2 text-xs text-slate-500">Suscriptores en SQLite</p>
+      <p class="mt-2 text-xs text-slate-500">Suscriptores registrados</p>
     </article>
     <article class="card">
       <p class="text-sm text-slate-400">Vehículos Ingresados</p>
@@ -13,7 +13,7 @@
     <article class="card">
       <p class="text-sm text-slate-400">Celdas Disponibles</p>
       <p class="mt-2 text-4xl font-semibold text-emerald-300">{{ data.celdasDisponibles }}</p>
-      <p class="mt-2 text-xs text-slate-500">De 80 celdas totales</p>
+      <p class="mt-2 text-xs text-slate-500">De {{ data.totalCeldas }} celdas totales</p>
     </article>
   </section>
 
@@ -22,7 +22,6 @@
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-white">Mapa de celdas</h2>
-          <p class="text-sm text-slate-400">70 carros (C01–C70) y 10 motos (M01–M10)</p>
         </div>
         <div class="flex gap-3 text-xs">
           <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded bg-emerald-500"></span> Disponible</span>

@@ -48,6 +48,7 @@ def obtener_dashboard(db: Session = Depends(get_db)):
         vehiculosRegistrados=len(vehiculos),
         vehiculosIngresados=len(activos),
         celdasDisponibles=sum(1 for celda in celdas if celda.estado == "LIBRE"),
+        totalCeldas=len(celdas),
         defaultOperarioId=operario.id_usuario if operario else None,
         celdas=detalle_celdas,
     )

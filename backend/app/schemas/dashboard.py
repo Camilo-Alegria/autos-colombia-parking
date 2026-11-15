@@ -63,6 +63,7 @@ class DashboardOut(BaseModel):
     vehiculosRegistrados: int
     vehiculosIngresados: int
     celdasDisponibles: int
+    totalCeldas: int
     defaultOperarioId: int | None = None
     celdas: list[CeldaDetalleOut]
 
@@ -90,4 +91,5 @@ class SuscriptorCreate(BaseModel):
 
 class ReasignarCelda(BaseModel):
     idCelda: int
+
 

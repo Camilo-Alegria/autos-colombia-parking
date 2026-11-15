@@ -15,10 +15,10 @@ export class ParkingStore {
   readonly aviso = signal<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   readonly celdasCarro = computed(
-    () => this.dashboard()?.celdas.filter((celda) => celda.codigo.startsWith('C')) ?? [],
+    () => this.dashboard()?.celdas.filter((celda) => celda.idTipo === 1) ?? [],
   );
   readonly celdasMoto = computed(
-    () => this.dashboard()?.celdas.filter((celda) => celda.codigo.startsWith('M')) ?? [],
+    () => this.dashboard()?.celdas.filter((celda) => celda.idTipo === 2) ?? [],
   );
 
   async cargarTodo(): Promise<void> {
