@@ -81,4 +81,8 @@ export class ApiService {
       payload,
     );
   }
+
+  eliminarCelda(idCelda: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/celdas/${idCelda}`);
+  }
 }

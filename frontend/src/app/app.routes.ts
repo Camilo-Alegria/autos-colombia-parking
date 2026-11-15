@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { Shell } from './layout/shell';
+import { AdminPage } from './pages/admin.page';
 import { DashboardPage } from './pages/dashboard.page';
 import { EditarPage } from './pages/editar.page';
 import { EntradaPage } from './pages/entrada.page';
@@ -16,6 +17,8 @@ export const routes: Routes = [
       { path: 'entrada', component: EntradaPage },
       { path: 'salida', component: SalidaPage },
       { path: 'editar', component: EditarPage },
+      { path: 'admin', component: AdminPage },
     ],
   },
 ];
+

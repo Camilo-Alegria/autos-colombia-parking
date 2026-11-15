@@ -33,6 +33,11 @@ export class EntradaPage implements OnInit {
     }
   }
 
+  abrirModalRegistro(): void {
+    this.nuevo = { ...this.formularioVacio(), placa: this.placa.trim().toUpperCase() };
+    this.modalAbierto.set(true);
+  }
+
   async buscar(): Promise<void> {
     const placa = this.placa.trim().toUpperCase();
     if (!placa) {
@@ -45,7 +50,10 @@ export class EntradaPage implements OnInit {
     try {
       const detalle = await firstValueFrom(this.api.buscarPorPlaca(placa));
       this.detalle.set(detalle);
-      if (detalle.registroActivo) {
+      if (detalle.vehiculo.estado_pago === 'PENDIENTE') {
+        this.store.marcarError(`¡Alerta! El vehículo ${detalle.vehiculo.placa} tiene la mensualidad PENDIENTE. Ingreso bloqueado.`);
+        this.celdasLibres.set([]);
+      } else if (detalle.registroActivo) {
         this.store.marcarError(`El vehículo ${detalle.vehiculo.placa} ya está ingresado en ${detalle.celda?.codigo}.`);
         this.celdasLibres.set([]);
       } else {
@@ -95,6 +103,10 @@ export class EntradaPage implements OnInit {
       this.store.marcarError('Busca primero un vehículo.');
       return;
     }
+    if (detalle.vehiculo.estado_pago === 'PENDIENTE') {
+      this.store.marcarError('No se puede registrar la entrada: mensualidad PENDIENTE.');
+      return;
+    }
     if (!operarioId) {
       this.store.marcarError('No hay un operario configurado en el backend.');
       return;
@@ -141,7 +153,9 @@ export class EntradaPage implements OnInit {
       correo: '',
       placa: '',
       marca: '',
+      modelo: '',
       color: '',
+      estado_pago: 'AL_DIA',
       idTipo: this.store.tipos()[0]?.idTipo ?? 1,
     };
   }

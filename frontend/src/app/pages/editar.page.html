@@ -1,27 +1,11 @@
 <div class="grid gap-6 lg:grid-cols-2">
   <section class="card">
-    <h2 class="text-lg font-semibold text-white">Editar suscriptor</h2>
-    <p class="mt-1 text-sm text-slate-400">Busca por placa y actualiza propietario y vehículo.</p>
+    <h2 class="text-lg font-semibold text-white">Reasignar</h2>
+    <p class="mt-1 text-sm text-slate-400">Busca por placa para reasignar la celda del vehículo.</p>
     <form class="mt-4 flex gap-3" (ngSubmit)="buscar()">
       <input class="field" name="placa" [(ngModel)]="placa" placeholder="Placa" />
       <button class="btn-primary" type="submit">Buscar</button>
     </form>
-
-    @if (detalle(); as info) {
-      <form class="mt-5 grid gap-3" (ngSubmit)="guardarSuscriptor()">
-        <p class="text-xs uppercase tracking-wider text-slate-400">Propietario</p>
-        <input class="field" name="nombre" [(ngModel)]="nombre" placeholder="Nombre" required />
-        <input class="field" name="documento" [(ngModel)]="documento" placeholder="Documento" required />
-        <input class="field" name="telefono" [(ngModel)]="telefono" placeholder="Teléfono" required />
-        <input class="field" name="correo" [(ngModel)]="correo" placeholder="Correo" required />
-        <p class="mt-2 text-xs uppercase tracking-wider text-slate-400">Vehículo</p>
-        <input class="field" name="placaEdit" [(ngModel)]="placaEdit" placeholder="Placa" required />
-        <input class="field" name="marca" [(ngModel)]="marca" placeholder="Marca" required />
-        <input class="field" name="color" [(ngModel)]="color" placeholder="Color" required />
-        <p class="text-xs text-slate-500">Tipo: {{ info.tipo.nombre }} (no cambia al editar)</p>
-        <button class="btn-primary mt-2" type="submit" [disabled]="enviando()">Guardar cambios</button>
-      </form>
-    }
   </section>
 
   <section class="card">

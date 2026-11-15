@@ -1,16 +1,20 @@
+# backend/app/api/registros.py
+
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.celda import Celda
-from app.models.operario import Operario
+from app.models.usuario import Usuario
 from app.models.registro_entrada_salida import RegistroEntradaSalida
 from app.api.detalle import armar_vehiculo_detalle
 from app.models.vehiculo import Vehiculo
 from app.schemas.dashboard import ReasignarCelda, VehiculoDetalleOut
 from app.schemas.registro_entrada_salida import IngresoCreate, RegistroOut
+from app.services.auditoria_service import auditoria_service
 
 router = APIRouter()
 
@@ -89,14 +93,18 @@ def obtener_registro(id_registro: int, db: Session = Depends(get_db)):
 
 
 @router.post("/ingreso", response_model=RegistroOut, status_code=status.HTTP_201_CREATED)
-def registrar_ingreso(payload: IngresoCreate, db: Session = Depends(get_db)):
+def registrar_ingreso(
+    payload: IngresoCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(get_current_user),
+):
     vehiculo = db.get(Vehiculo, payload.idVehiculo)
     if not vehiculo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehículo no encontrado")
 
-    operario = db.get(Operario, payload.idOperario)
-    if not operario:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operario no encontrado")
+    # Usar directamente el usuario autenticado desde el Token JWT
+    operario = usuario_actual
 
     activo = (
         db.query(RegistroEntradaSalida)
@@ -142,17 +150,32 @@ def registrar_ingreso(payload: IngresoCreate, db: Session = Depends(get_db)):
         tiempoParqueo=0,
         idVehiculo=vehiculo.idVehiculo,
         idCelda=celda.idCelda,
-        idOperario=operario.idOperario,
+        idOperario=operario.id_usuario,
     )
     celda.estado = "OCUPADA"
     db.add(registro)
     db.commit()
     db.refresh(registro)
+
+    ip_cliente = request.client.host if request and request.client else "127.0.0.1"
+    auditoria_service.registrar_accion(
+        db=db,
+        accion="INGRESO_VEHICULO",
+        detalles=f"Ingreso de vehículo {vehiculo.placa} en celda {celda.codigo}",
+        usuario=operario,
+        ip=ip_cliente,
+    )
+
     return registro
 
 
 @router.post("/{id_registro}/salida", response_model=RegistroOut)
-def registrar_salida(id_registro: int, db: Session = Depends(get_db)):
+def registrar_salida(
+    id_registro: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(get_current_user),
+):
     registro = db.get(RegistroEntradaSalida, id_registro)
     if not registro:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registro no encontrado")
@@ -173,11 +196,31 @@ def registrar_salida(id_registro: int, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(registro)
+
+    vehiculo = db.get(Vehiculo, registro.idVehiculo)
+    placa = vehiculo.placa if vehiculo else str(registro.idVehiculo)
+    codigo_celda = celda.codigo if celda else str(registro.idCelda)
+    ip_cliente = request.client.host if request and request.client else "127.0.0.1"
+
+    auditoria_service.registrar_accion(
+        db=db,
+        accion="SALIDA_VEHICULO",
+        detalles=f"Salida de vehículo {placa} de la celda {codigo_celda}",
+        usuario=usuario_actual,
+        ip=ip_cliente,
+    )
+
     return registro
 
 
 @router.post("/{id_registro}/reasignar", response_model=RegistroOut)
-def reasignar_celda(id_registro: int, payload: ReasignarCelda, db: Session = Depends(get_db)):
+def reasignar_celda(
+    id_registro: int,
+    payload: ReasignarCelda,
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(get_current_user),
+):
     registro = db.get(RegistroEntradaSalida, id_registro)
     if not registro:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registro no encontrado")
@@ -207,6 +250,18 @@ def reasignar_celda(id_registro: int, payload: ReasignarCelda, db: Session = Dep
         anterior.estado = "LIBRE"
     nueva.estado = "OCUPADA"
     registro.idCelda = nueva.idCelda
+
     db.commit()
     db.refresh(registro)
+
+    ip_cliente = request.client.host if request and request.client else "127.0.0.1"
+
+    auditoria_service.registrar_accion(
+        db=db,
+        accion="REASIGNACION_CELDA",
+        detalles=f"Reasignación de celda para vehículo {vehiculo.placa if vehiculo else ''} a celda {nueva.codigo}",
+        usuario=usuario_actual,
+        ip=ip_cliente,
+    )
+
     return registro

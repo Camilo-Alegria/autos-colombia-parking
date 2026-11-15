@@ -4,15 +4,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import api_router
+from app.api.websockets import router as ws_router
 from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.seed import ensure_schema, seed_datos_iniciales
 from app.models import (  # noqa: F401
     Celda,
     Cliente,
+    HistorialAuditoria,
     Operario,
     RegistroEntradaSalida,
     Tipo,
+    TokenRevocado,
+    Usuario,
     Vehiculo,
 )
 
@@ -40,8 +44,10 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api")
+app.include_router(ws_router, prefix="/ws")
 
 
 @app.get("/health")
 def health():
     return {"status": "ok", "app": settings.app_name}
+

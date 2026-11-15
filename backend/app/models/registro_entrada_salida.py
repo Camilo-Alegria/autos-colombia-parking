@@ -19,9 +19,10 @@ class RegistroEntradaSalida(Base):
     )
     idCelda: Mapped[int] = mapped_column(ForeignKey("celdas.idCelda"), nullable=False)
     idOperario: Mapped[int] = mapped_column(
-        ForeignKey("operarios.idOperario"), nullable=False
+        ForeignKey("usuarios.id_usuario"), nullable=False
     )
 
     vehiculo = relationship("Vehiculo", back_populates="registros")
     celda = relationship("Celda", back_populates="registros")
-    operario = relationship("Operario", back_populates="registros")
+    usuario = relationship("Usuario", back_populates="registros")
+

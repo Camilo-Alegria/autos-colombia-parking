@@ -27,7 +27,9 @@ class VehiculoResumen(BaseModel):
     idVehiculo: int
     placa: str
     marca: str
+    modelo: str = ""
     color: str
+    estado_pago: str = "AL_DIA"
     idCliente: int
     idTipo: int
 
@@ -49,6 +51,7 @@ class CeldaDetalleOut(BaseModel):
     idCelda: int
     codigo: str
     estado: str
+    activo: bool = True
     idTipo: int
     tipo: TipoResumen | None = None
     registro: RegistroResumen | None = None
@@ -79,9 +82,12 @@ class SuscriptorCreate(BaseModel):
     correo: str
     placa: str
     marca: str
+    modelo: str = ""
     color: str
+    estado_pago: str = "AL_DIA"
     idTipo: int
 
 
 class ReasignarCelda(BaseModel):
     idCelda: int
+

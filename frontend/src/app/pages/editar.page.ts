@@ -22,14 +22,6 @@ export class EditarPage {
   idNuevaCelda: number | null = null;
   enviando = signal(false);
 
-  nombre = '';
-  documento = '';
-  telefono = '';
-  correo = '';
-  marca = '';
-  color = '';
-  placaEdit = '';
-
   async buscar(): Promise<void> {
     const placa = this.placa.trim().toUpperCase();
     if (!placa) {
@@ -39,13 +31,6 @@ export class EditarPage {
     try {
       const detalle = await firstValueFrom(this.api.buscarPorPlaca(placa));
       this.detalle.set(detalle);
-      this.nombre = detalle.cliente.nombre;
-      this.documento = detalle.cliente.documento;
-      this.telefono = detalle.cliente.telefono;
-      this.correo = detalle.cliente.correo;
-      this.marca = detalle.vehiculo.marca;
-      this.color = detalle.vehiculo.color;
-      this.placaEdit = detalle.vehiculo.placa;
       this.idNuevaCelda = null;
       this.celdasLibres.set(
         detalle.registroActivo
@@ -56,41 +41,6 @@ export class EditarPage {
     } catch (error) {
       this.detalle.set(null);
       this.store.marcarError(mensajeApi(error));
-    }
-  }
-
-  async guardarSuscriptor(): Promise<void> {
-    const detalle = this.detalle();
-    if (!detalle) {
-      return;
-    }
-    this.enviando.set(true);
-    try {
-      await firstValueFrom(
-        this.api.actualizarCliente(detalle.cliente.idCliente, {
-          nombre: this.nombre,
-          documento: this.documento,
-          telefono: this.telefono,
-          correo: this.correo,
-        }),
-      );
-      await firstValueFrom(
-        this.api.actualizarVehiculo(detalle.vehiculo.idVehiculo, {
-          placa: this.placaEdit.trim().toUpperCase(),
-          marca: this.marca,
-          color: this.color,
-          idCliente: detalle.cliente.idCliente,
-          idTipo: detalle.vehiculo.idTipo,
-        }),
-      );
-      this.placa = this.placaEdit.trim().toUpperCase();
-      await this.buscar();
-      await this.store.refrescarDashboard();
-      this.store.marcarOk('Suscriptor actualizado.');
-    } catch (error) {
-      this.store.marcarError(mensajeApi(error));
-    } finally {
-      this.enviando.set(false);
     }
   }
 

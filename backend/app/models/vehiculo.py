@@ -10,10 +10,13 @@ class Vehiculo(Base):
     idVehiculo: Mapped[int] = mapped_column(primary_key=True, index=True)
     placa: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
     marca: Mapped[str] = mapped_column(String(60), nullable=False)
+    modelo: Mapped[str] = mapped_column(String(40), nullable=False, default="")
     color: Mapped[str] = mapped_column(String(40), nullable=False)
+    estado_pago: Mapped[str] = mapped_column(String(20), nullable=False, default="AL_DIA")
     idCliente: Mapped[int] = mapped_column(ForeignKey("clientes.idCliente"), nullable=False)
     idTipo: Mapped[int] = mapped_column(ForeignKey("tipos.idTipo"), nullable=False)
 
     cliente = relationship("Cliente", back_populates="vehiculos")
     tipo = relationship("Tipo", back_populates="vehiculos")
     registros = relationship("RegistroEntradaSalida", back_populates="vehiculo")
+

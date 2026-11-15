@@ -10,6 +10,7 @@ from app.models.registro_entrada_salida import RegistroEntradaSalida
 from app.models.tipo import Tipo
 from app.models.vehiculo import Vehiculo
 from app.schemas.dashboard import DashboardOut
+from app.models.usuario import Usuario
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ def obtener_dashboard(db: Session = Depends(get_db)):
     )
     activos_por_celda = {registro.idCelda: registro for registro in activos}
     celdas = db.query(Celda).order_by(Celda.codigo).all()
-    operario = db.query(Operario).order_by(Operario.idOperario).first()
+    operario = db.query(Usuario).order_by(Usuario.id_usuario).first()
 
     detalle_celdas = []
     for celda in celdas:
@@ -47,6 +48,6 @@ def obtener_dashboard(db: Session = Depends(get_db)):
         vehiculosRegistrados=len(vehiculos),
         vehiculosIngresados=len(activos),
         celdasDisponibles=sum(1 for celda in celdas if celda.estado == "LIBRE"),
-        defaultOperarioId=operario.idOperario if operario else None,
+        defaultOperarioId=operario.id_usuario if operario else None,
         celdas=detalle_celdas,
     )

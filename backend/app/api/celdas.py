@@ -1,59 +1,51 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.celda import Celda
-from app.models.tipo import Tipo
+from app.core.security import require_admin
 from app.schemas.celda import CeldaCreate, CeldaOut, CeldaUpdate
+from app.services.celda_service import celda_service
+from app.models.celda import Celda
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 
 
 @router.get("/", response_model=list[CeldaOut])
 def listar_celdas(db: Session = Depends(get_db)):
-    return db.query(Celda).all()
+    return celda_service.listar_celdas(db)
 
 
 @router.get("/disponibles", response_model=list[CeldaOut])
 def listar_celdas_disponibles(id_tipo: int | None = None, db: Session = Depends(get_db)):
-    consulta = db.query(Celda).filter(Celda.estado == "LIBRE")
-    if id_tipo is not None:
-        consulta = consulta.filter(Celda.idTipo == id_tipo)
-    return consulta.all()
-
-
-@router.get("/{id_celda}", response_model=CeldaOut)
-def obtener_celda(id_celda: int, db: Session = Depends(get_db)):
-    celda = db.get(Celda, id_celda)
-    if not celda:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Celda no encontrada")
-    return celda
+    return celda_service.listar_disponibles(db, id_tipo=id_tipo)
 
 
 @router.post("/", response_model=CeldaOut, status_code=status.HTTP_201_CREATED)
-def crear_celda(payload: CeldaCreate, db: Session = Depends(get_db)):
-    if not db.get(Tipo, payload.idTipo):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tipo no encontrado")
-    existente = db.query(Celda).filter(Celda.codigo == payload.codigo).first()
-    if existente:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El código de celda ya existe")
-    celda = Celda(**payload.model_dump())
-    db.add(celda)
-    db.commit()
-    db.refresh(celda)
+async def crear_celda(payload: CeldaCreate, request: Request, db: Session = Depends(get_db), current_user=Depends(require_admin)):
+    ip = request.client.host if request.client else None
+    return await celda_service.crear_celda(db, payload, current_user, ip)
+
+@router.get("/{id_celda}")
+def obtener_celda(id_celda: int, db: Session = Depends(get_db)):
+    celda = db.get(Celda, id_celda)
+    if not celda:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Celda no encontrada",
+        )
     return celda
 
 
 @router.put("/{id_celda}", response_model=CeldaOut)
-def actualizar_celda(id_celda: int, payload: CeldaUpdate, db: Session = Depends(get_db)):
-    celda = db.get(Celda, id_celda)
-    if not celda:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Celda no encontrada")
-    datos = payload.model_dump(exclude_unset=True)
-    if "idTipo" in datos and not db.get(Tipo, datos["idTipo"]):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tipo no encontrado")
-    for campo, valor in datos.items():
-        setattr(celda, campo, valor)
-    db.commit()
-    db.refresh(celda)
-    return celda
+async def actualizar_celda(id_celda: int, payload: CeldaUpdate, request: Request, db: Session = Depends(get_db), current_user=Depends(require_admin)):
+    ip = request.client.host if request.client else None
+    return await celda_service.actualizar_celda(db, id_celda, payload, current_user, ip)
+
+
+@router.delete("/{id_celda}", status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_celda(id_celda: int, request: Request, db: Session = Depends(get_db), usuario_actual=Depends(require_admin)):
+    ip = request.client.host if request.client else None
+    await celda_service.eliminar_celda(db, id_celda, usuario_actual, ip)
+    return None
+
