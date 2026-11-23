@@ -15,6 +15,7 @@ from app.models.vehiculo import Vehiculo
 from app.schemas.dashboard import ReasignarCelda, VehiculoDetalleOut
 from app.schemas.registro_entrada_salida import IngresoCreate, RegistroOut
 from app.services.auditoria_service import auditoria_service
+from app.services.pagos_service import calcular_estado_semaforo
 
 router = APIRouter()
 
@@ -102,6 +103,15 @@ def registrar_ingreso(
     vehiculo = db.get(Vehiculo, payload.idVehiculo)
     if not vehiculo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehículo no encontrado")
+
+    # Validación en portería: evalúa el semáforo del vehículo antes de permitir la entrada
+    estado_semaforo = calcular_estado_semaforo(vehiculo.fecha_vencimiento)
+    if estado_semaforo == "SE_REQUIERE_PAGO":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Mensualidad vencida: se requiere pago",
+        )
+    # Si es "AL_DIA" o "PROXIMO_A_VENCER", permite el ingreso normal.
 
     # Usar directamente el usuario autenticado desde el Token JWT
     operario = usuario_actual

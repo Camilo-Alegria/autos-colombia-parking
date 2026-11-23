@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
+import { Router } from '@angular/router';
+import { VehiculoEstadoCuenta } from '../models/parking.models';
 import { Celda, SuscriptorCreate, VehiculoDetalle } from '../models/parking.models';
 import { ApiService } from '../services/api.service';
 import { ParkingStore } from '../services/parking.store';
@@ -14,6 +16,7 @@ import { formatTarifa, mensajeApi } from '../utils/formatters';
 })
 export class EntradaPage implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly router = inject(Router);
   protected readonly store = inject(ParkingStore);
   protected readonly formatTarifa = formatTarifa;
 
@@ -23,9 +26,30 @@ export class EntradaPage implements OnInit {
   detalle = signal<VehiculoDetalle | null>(null);
   celdasLibres = signal<Celda[]>([]);
   modalAbierto = signal(false);
+  vehiculoEstado = signal<VehiculoEstadoCuenta | null>(null);
   enviando = signal(false);
 
   nuevo: SuscriptorCreate = this.formularioVacio();
+  clienteInfo = signal<{ existe: boolean; nombre: string; telefono: string } | null>(null);
+  clienteExistente = signal(false);
+
+  async buscarPropietario(): Promise<void> {
+    const cedula = this.nuevo.documento.trim();
+    if (!cedula) return;
+    try {
+      const info = await firstValueFrom(this.api.consultarPropietario(cedula));
+      this.clienteInfo.set(info);
+      this.clienteExistente.set(info.existe);
+      if (info.existe) {
+        this.nuevo.nombre = info.nombre;
+        this.nuevo.telefono = info.telefono;
+        this.nuevo.password = '**********';
+      }
+    } catch (err) {
+      this.store.marcarError(mensajeApi(err));
+    }
+  }
+
 
   ngOnInit(): void {
     if (!this.store.dashboard()) {
@@ -46,12 +70,19 @@ export class EntradaPage implements OnInit {
     }
     this.ocupado.set(true);
     this.detalle.set(null);
+    this.vehiculoEstado.set(null);
     this.idCelda = null;
     try {
-      const detalle = await firstValueFrom(this.api.buscarPorPlaca(placa));
+      const [detalle, estadoVeh] = await Promise.all([
+        firstValueFrom(this.api.buscarPorPlaca(placa)),
+        firstValueFrom(this.api.consultarVehiculoPlaca(placa)).catch(() => null),
+      ]);
       this.detalle.set(detalle);
-      if (detalle.vehiculo.estado_pago === 'PENDIENTE') {
-        this.store.marcarError(`¡Alerta! El vehículo ${detalle.vehiculo.placa} tiene la mensualidad PENDIENTE. Ingreso bloqueado.`);
+      this.vehiculoEstado.set(estadoVeh);
+
+      const semaforo = estadoVeh?.estado_semaforo;
+      if (semaforo === 'SE_REQUIERE_PAGO' || detalle.vehiculo.estado_pago === 'PENDIENTE') {
+        this.store.marcarError(`INGRESO BLOQUEADO: Mensualidad vencida — Se requiere pago para el vehículo ${placa}.`);
         this.celdasLibres.set([]);
       } else if (detalle.registroActivo) {
         this.store.marcarError(`El vehículo ${detalle.vehiculo.placa} ya está ingresado en ${detalle.celda?.codigo}.`);
@@ -76,19 +107,23 @@ export class EntradaPage implements OnInit {
   async registrarNuevo(): Promise<void> {
     this.enviando.set(true);
     try {
-      const creado = await firstValueFrom(
-        this.api.registrarSuscriptor({
-          ...this.nuevo,
-          placa: this.nuevo.placa.trim().toUpperCase(),
-          idTipo: Number(this.nuevo.idTipo),
-        }),
-      );
+      const payload = {
+        cedula: this.nuevo.documento.trim(),
+        nombre: this.nuevo.nombre.trim(),
+        telefono: this.nuevo.telefono.trim(),
+        password: this.nuevo.password || 'cliente123',
+        placa: this.nuevo.placa.trim().toUpperCase(),
+        idTipo: Number(this.nuevo.idTipo),
+        marca: this.nuevo.marca.trim(),
+        modelo: this.nuevo.modelo.trim(),
+        color: this.nuevo.color.trim(),
+      };
+      const creado = await firstValueFrom(this.api.registrarVehiculoCliente(payload));
       this.modalAbierto.set(false);
-      this.placa = creado.vehiculo.placa;
-      this.detalle.set(creado);
-      await this.cargarCeldas(creado.tipo.idTipo);
+      this.placa = creado.placa;
+      await this.buscar();
       await this.store.refrescarDashboard();
-      this.store.marcarOk(`Suscriptor ${creado.cliente.nombre} y vehículo ${creado.vehiculo.placa} registrados.`);
+      this.store.marcarOk(`Cliente ${this.nuevo.nombre} registrado. Corte: día ${creado.dia_corte}.`);
     } catch (error) {
       this.store.marcarError(mensajeApi(error));
     } finally {
@@ -98,13 +133,14 @@ export class EntradaPage implements OnInit {
 
   async registrarEntrada(): Promise<void> {
     const detalle = this.detalle();
+    const estadoVeh = this.vehiculoEstado();
     const operarioId = this.store.dashboard()?.defaultOperarioId;
     if (!detalle) {
       this.store.marcarError('Busca primero un vehículo.');
       return;
     }
-    if (detalle.vehiculo.estado_pago === 'PENDIENTE') {
-      this.store.marcarError('No se puede registrar la entrada: mensualidad PENDIENTE.');
+    if (estadoVeh?.estado_semaforo === 'SE_REQUIERE_PAGO' || detalle.vehiculo.estado_pago === 'PENDIENTE') {
+      this.store.marcarError('INGRESO BLOQUEADO: Mensualidad vencida — Se requiere pago.');
       return;
     }
     if (!operarioId) {
@@ -127,11 +163,17 @@ export class EntradaPage implements OnInit {
       await this.store.refrescarDashboard();
       this.store.marcarOk(`Entrada registrada para ${detalle.vehiculo.placa}.`);
       this.detalle.set(null);
+      this.vehiculoEstado.set(null);
       this.celdasLibres.set([]);
       this.placa = '';
       this.idCelda = null;
     } catch (error) {
-      this.store.marcarError(mensajeApi(error));
+      const http = error as { status?: number };
+      if (http.status === 403) {
+        this.store.marcarError('INGRESO BLOQUEADO: Mensualidad vencida — Se requiere pago.');
+      } else {
+        this.store.marcarError(mensajeApi(error));
+      }
     } finally {
       this.enviando.set(false);
     }
@@ -143,6 +185,10 @@ export class EntradaPage implements OnInit {
 
   private async cargarCeldas(idTipo: number): Promise<void> {
     this.celdasLibres.set(await firstValueFrom(this.api.celdasDisponibles(idTipo)));
+  }
+
+  irAPagos(): void {
+    void this.router.navigate(['/pagos']);
   }
 
   private formularioVacio(): SuscriptorCreate {

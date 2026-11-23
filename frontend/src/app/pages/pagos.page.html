@@ -1,0 +1,105 @@
+<div class="space-y-6 max-w-4xl mx-auto">
+  <div class="card bg-slate-900 border-slate-800">
+    <h2 class="text-xl font-semibold text-white">Gestión de Pagos y Semáforo de Mensualidades</h2>
+    <p class="text-sm text-slate-400 mt-1">Busca un vehículo por placa para consultar su estado de cuenta, vigencia y registrar pagos presenciales.</p>
+    
+    <form class="mt-4 flex gap-3" (ngSubmit)="buscarVehiculo()">
+      <input
+        class="field uppercase"
+        [(ngModel)]="placaBusqueda"
+        name="placaBusqueda"
+        placeholder="Ingrese placa (ej. ABC123)"
+        maxlength="10"
+        autocomplete="off"
+      />
+      <button class="btn-primary" type="submit" [disabled]="enviando()">Consultar Placa</button>
+    </form>
+  </div>
+
+  @if (resultadoVehiculo(); as veh) {
+    <div class="card border-slate-800 bg-slate-900/90">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-2xl font-bold text-white tracking-wide">{{ veh.placa }}</h3>
+          <p class="text-sm text-slate-300 mt-0.5">{{ veh.marca }} {{ veh.modelo }} · {{ veh.color }}</p>
+        </div>
+        <div>
+          @if (veh.estado_semaforo === 'AL_DIA') {
+            <span class="rounded-full bg-emerald-500/25 px-4 py-1.5 text-sm font-semibold text-emerald-300 border border-emerald-500/40">Al día</span>
+          } @else if (veh.estado_semaforo === 'PROXIMO_A_VENCER') {
+            <span class="rounded-full bg-amber-500/25 px-4 py-1.5 text-sm font-semibold text-amber-300 border border-amber-500/40">Próximo a vencer</span>
+          } @else {
+            <span class="rounded-full bg-red-500/25 px-4 py-1.5 text-sm font-semibold text-red-300 border border-red-500/40">Se requiere pago</span>
+          }
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
+        <div class="rounded-xl bg-slate-950 p-4 border border-slate-800 space-y-2">
+          <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Detalles de Mensualidad</p>
+          <div class="flex justify-between"><span class="text-slate-400">Tarifa Fija:</span><span class="font-bold text-white text-base">{{ formatTarifa(veh.tarifa) }}</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Día de Corte:</span><span class="font-medium text-slate-200">Día {{ veh.dia_corte ?? 'N/A' }} del mes</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Fecha Vencimiento:</span><span class="font-medium text-slate-200">{{ formatFecha(veh.fecha_vencimiento) }}</span></div>
+        </div>
+
+        <div class="rounded-xl bg-slate-950 p-4 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Acciones Operativas</p>
+            <p class="text-xs text-slate-400 mt-2">
+              @if (veh.estado_semaforo === 'AL_DIA') {
+                El vehículo se encuentra al corriente con su mensualidad. No se requiere cobro presencial en este momento.
+              } @else {
+                El vehículo presenta mensualidad próxima a vencer o vencida. Puede registrar el pago presencial para renovar 1 mes la vigencia.
+              }
+            </p>
+          </div>
+          <div class="mt-4">
+            @if (veh.estado_semaforo === 'AL_DIA') {
+              <button class="w-full btn-ghost text-xs cursor-not-allowed opacity-50 py-2.5" disabled>Cobro Deshabilitado (Ya está Al Día)</button>
+            } @else {
+              <button class="w-full btn-primary bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold py-2.5" type="button" [disabled]="enviando()" (click)="registrarPagoPresencial(veh)">
+                Registrar Pago Presencial ({{ formatTarifa(veh.tarifa) }})
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-800">
+        <h4 class="text-md font-semibold text-white mb-3">Historial de Pagos del Vehículo</h4>
+        @if (veh.historial_pagos.length === 0) {
+          <p class="text-xs text-slate-400">No hay pagos registrados para este vehículo.</p>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-slate-800 text-xs uppercase text-slate-400">
+                <tr>
+                  <th class="py-2 px-3">ID Pago</th>
+                  <th class="py-2 px-3">Fecha y Hora</th>
+                  <th class="py-2 px-3">Monto</th>
+                  <th class="py-2 px-3">Método</th>
+                  <th class="py-2 px-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                @for (p of veh.historial_pagos; track p.id_pago) {
+                  <tr>
+                    <td class="py-2.5 px-3 font-mono text-xs">#{{ p.id_pago }}</td>
+                    <td class="py-2.5 px-3 text-xs">{{ formatFecha(p.fecha_pago) }}</td>
+                    <td class="py-2.5 px-3 font-semibold text-emerald-400">{{ formatTarifa(p.monto) }}</td>
+                    <td class="py-2.5 px-3">
+                      <span class="rounded px-2 py-0.5 text-[10px] font-semibold uppercase bg-purple-500/20 text-purple-300">{{ p.metodo_pago }}</span>
+                    </td>
+                    <td class="py-2.5 px-3">
+                      <span class="rounded px-2 py-0.5 text-[10px] font-semibold uppercase bg-emerald-500/20 text-emerald-300">{{ p.estado }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

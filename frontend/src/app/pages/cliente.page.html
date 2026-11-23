@@ -1,0 +1,65 @@
+<div class="space-y-6">
+  <div class="card bg-slate-900 border-slate-800">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">Portal del Cliente</p>
+        <h2 class="text-xl font-semibold text-white mt-1">Estado de Cuenta y Mensualidades</h2>
+        @if (estadoCuenta(); as ec) {
+          <p class="text-sm text-slate-300 mt-1">Propietario: <span class="text-white font-medium">{{ ec.nombre }}</span> (Cédula: {{ ec.cedula }})</p>
+        }
+      </div>
+      <button class="btn-ghost text-xs" type="button" (click)="cargarEstadoCuenta()">Actualizar Estado</button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="card text-center py-12">
+      <p class="text-sm text-slate-400">Cargando información del estado de cuenta...</p>
+    </div>
+  } @else if (estadoCuenta(); as ec) {
+    @if (ec.vehiculos.length === 0) {
+      <div class="card text-center py-12">
+        <p class="text-slate-400">No tienes vehículos registrados actualmente en el sistema.</p>
+      </div>
+    } @else {
+      <div class="grid gap-6 md:grid-cols-2">
+        @for (v of ec.vehiculos; track v.idVehiculo) {
+          <div class="card border-slate-800 bg-slate-900/90 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 class="text-lg font-bold text-white tracking-wider">{{ v.placa }}</h3>
+                  <p class="text-xs text-slate-400">{{ v.marca }} {{ v.modelo }} · {{ v.color }}</p>
+                </div>
+                <div>
+                  @if (v.estado_semaforo === 'AL_DIA') {
+                    <span class="rounded-full bg-emerald-500/25 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/40">Al día</span>
+                  } @else if (v.estado_semaforo === 'PROXIMO_A_VENCER') {
+                    <span class="rounded-full bg-amber-500/25 px-3 py-1 text-xs font-semibold text-amber-300 border border-amber-500/40">Próximo a vencer</span>
+                  } @else {
+                    <span class="rounded-full bg-red-500/25 px-3 py-1 text-xs font-semibold text-red-300 border border-red-500/40">Se requiere pago</span>
+                  }
+                </div>
+              </div>
+              <div class="mt-4 space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-slate-400">Tarifa:</span><span class="font-semibold text-white">{{ formatTarifa(v.tarifa) }}</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">Corte:</span><span class="font-medium text-slate-200">Día {{ v.dia_corte ?? 'N/A' }}</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">Vencimiento:</span><span class="font-medium text-slate-200">{{ formatFecha(v.fecha_vencimiento) }}</span></div>
+              </div>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Pago en Línea / Presencial</span>
+              @if (v.estado_semaforo === 'AL_DIA') {
+                <button class="btn-ghost text-xs cursor-not-allowed opacity-50" type="button" disabled>Al día</button>
+              } @else {
+                <button class="btn-primary text-xs bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold" type="button" [disabled]="enviando()" (click)="pagarEnLinea(v)">
+                  {{ enviando() ? 'Redirigiendo...' : 'Pagar Mensualidad' }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

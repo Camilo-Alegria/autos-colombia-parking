@@ -2,16 +2,16 @@
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
       <h2 class="text-lg font-semibold text-white">Registrar entrada</h2>
-      <p class="mt-1 text-sm text-slate-400">Busca la placa o registra un nuevo vehículo y propietario.</p>
+      <p class="mt-1 text-sm text-slate-400">Busca la placa o registra un nuevo vehículo y cuenta cliente portal.</p>
     </div>
     <button class="btn-ghost text-xs" type="button" (click)="abrirModalRegistro()">
-      + Registro Nuevo Vehículo
+      + Registro Nuevo Vehículo / Cliente
     </button>
   </div>
 
   <form class="mt-5 flex flex-col gap-3 sm:flex-row" (ngSubmit)="buscar()">
     <input
-      class="field"
+      class="field uppercase"
       name="placa"
       [(ngModel)]="placa"
       placeholder="Placa (ABC123)"
@@ -25,18 +25,28 @@
     <div class="mt-6 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <p class="text-xl font-semibold">{{ info.vehiculo.placa }} · {{ info.tipo.nombre }}</p>
-        <span class="rounded-full px-3 py-1 text-xs font-semibold"
-              [class]="info.vehiculo.estado_pago === 'PENDIENTE' ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'">
-          {{ info.vehiculo.estado_pago === 'PENDIENTE' ? '⚠️ Mensualidad Pendiente' : '✓ Mensualidad Al Día' }}
-        </span>
+        @if (vehiculoEstado(); as vst) {
+          <span class="rounded-full px-3 py-1 text-xs font-semibold"
+                [class]="vst.estado_semaforo === 'SE_REQUIERE_PAGO' ? 'bg-red-500/20 text-red-300 border border-red-500/40' : (vst.estado_semaforo === 'PROXIMO_A_VENCER' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40')">
+            {{ vst.estado_semaforo === 'SE_REQUIERE_PAGO' ? '⚠️ Se requiere pago (Vencido)' : (vst.estado_semaforo === 'PROXIMO_A_VENCER' ? '⚠️ Próximo a vencer' : '✓ Al día') }}
+          </span>
+        }
       </div>
       <p class="mt-1 text-sm text-slate-300">{{ info.vehiculo.marca }} {{ info.vehiculo.modelo }} · {{ info.vehiculo.color }}</p>
       <p class="mt-2 text-sm">{{ info.cliente.nombre }} · Documento: {{ info.cliente.documento }}</p>
-      <p class="text-xs text-slate-400">Tarifa mensual {{ formatTarifa(info.tipo.tarifa) }}</p>
+      @if (vehiculoEstado(); as vst) {
+        <p class="text-xs text-slate-400 mt-1">Tarifa mensual {{ formatTarifa(vst.tarifa) }} — Vencimiento: {{ vst.fecha_vencimiento ?? 'N/A' }}</p>
+      }
 
-      @if (info.vehiculo.estado_pago === 'PENDIENTE') {
-        <div class="mt-4 rounded-lg border border-red-700 bg-red-950/60 p-3 text-sm text-red-100">
-          ⚠️ Acceso bloqueado: el vehículo tiene pagos pendientes de mensualidad.
+      @if (vehiculoEstado()?.estado_semaforo === 'SE_REQUIERE_PAGO') {
+        <div class="mt-4 rounded-lg border border-red-700 bg-red-950/60 p-4 text-sm text-red-100 flex flex-col gap-2">
+          <p class="font-bold">INGRESO BLOQUEADO: Mensualidad vencida — Se requiere pago</p>
+          <p class="text-xs text-red-200">El vehículo no puede ingresar al parqueadero hasta que se efectúe el pago de su mensualidad.</p>
+          <div>
+            <button class="btn-primary text-xs bg-red-600 hover:bg-red-500 text-white mt-1" type="button" (click)="irAPagos()">
+              Ir a Gestión de Pagos →
+            </button>
+          </div>
         </div>
       } @else if (!info.registroActivo) {
         <label class="mt-4 block text-sm text-slate-300">Celda libre</label>
@@ -56,29 +66,32 @@
 
 @if (modalAbierto()) {
   <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4">
-    <div class="card w-full max-w-lg">
-      <h3 class="text-lg font-semibold text-white">Registro de Nuevo Vehículo y Propietario</h3>
-      <p class="mt-1 text-sm text-slate-400">Completa la información del suscriptor, vehículo y estado de pago.</p>
+    <div class="card w-full max-w-lg bg-slate-900 border-slate-800">
+      <h3 class="text-lg font-semibold text-white">Registro de Vehículo y Cuenta Cliente</h3>
+      <p class="mt-1 text-sm text-slate-400">Ingresa los datos del propietario para generar su acceso al portal de pagos (usuario = cédula) y el vehículo.</p>
       <form class="mt-4 grid gap-3 sm:grid-cols-2" (ngSubmit)="registrarNuevo()">
-        <input class="field" name="nombre" [(ngModel)]="nuevo.nombre" placeholder="Nombre Propietario" required />
-        <input class="field" name="documento" [(ngModel)]="nuevo.documento" placeholder="Cédula" required />
-        <input class="field" name="telefono" [(ngModel)]="nuevo.telefono" placeholder="Teléfono" required />
-        <input class="field" name="correo" [(ngModel)]="nuevo.correo" placeholder="Correo" type="email" required />
-        <input class="field" name="placaNueva" [(ngModel)]="nuevo.placa" placeholder="Placa" required />
+        <div class="sm:col-span-2 flex gap-2">
+          <input class="field flex-grow" name="documento" [(ngModel)]="nuevo.documento" placeholder="Cédula (Usuario Portal)" (blur)="buscarPropietario()" required />
+          <button class="btn-ghost" type="button" (click)="buscarPropietario()">Buscar</button>
+        </div>
+        
+        @if (clienteInfo(); as info) {
+          <div class="sm:col-span-2 text-xs p-2 rounded" [class]="info.existe ? 'bg-emerald-500/20 text-emerald-300' : 'bg-sky-500/20 text-sky-300'">
+            {{ info.existe ? 'Cliente registrado: el nuevo vehículo se asociará a su cuenta actual.' : 'Cliente nuevo: se creará automáticamente su usuario de acceso.' }}
+          </div>
+        }
+
+        <input class="field" name="nombre" [(ngModel)]="nuevo.nombre" placeholder="Nombre Propietario" [readonly]="clienteExistente()" required />
+        <input class="field" name="telefono" [(ngModel)]="nuevo.telefono" placeholder="Teléfono" [readonly]="clienteExistente()" required />
+        <input class="field" name="password" [(ngModel)]="nuevo.password" [type]="clienteExistente() ? 'text' : 'password'" [placeholder]="clienteExistente() ? 'Cuenta de cliente ya activa' : 'Contraseña de acceso al portal'" [readonly]="clienteExistente()" [required]="!clienteExistente()" />
+        
+        <input class="field uppercase" name="placaNueva" [(ngModel)]="nuevo.placa" placeholder="Placa" required />
         <input class="field" name="marca" [(ngModel)]="nuevo.marca" placeholder="Marca" required />
         <input class="field" name="modelo" [(ngModel)]="nuevo.modelo" placeholder="Modelo" />
         <input class="field" name="color" [(ngModel)]="nuevo.color" placeholder="Color" required />
 
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Estado de Pago</label>
-          <select class="field" name="estado_pago" [(ngModel)]="nuevo.estado_pago">
-            <option value="AL_DIA">AL_DIA ($250.000 / $100.000)</option>
-            <option value="PENDIENTE">PENDIENTE (Deudor)</option>
-          </select>
-        </div>
-
         <fieldset class="sm:col-span-2">
-          <legend class="mb-2 text-sm text-slate-300">Tipo de Vehículo y Tarifa</legend>
+          <legend class="mb-2 text-sm text-slate-300">Tipo de Vehículo y Tarifa Fija</legend>
           <div class="grid gap-2 sm:grid-cols-2">
             @for (tipo of store.tipos(); track tipo.idTipo) {
               <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-700 bg-slate-800 px-3 py-3 text-sm">
@@ -93,9 +106,10 @@
         </fieldset>
         <div class="mt-2 flex justify-end gap-2 sm:col-span-2">
           <button class="btn-ghost" type="button" (click)="cerrarModal()">Cancelar</button>
-          <button class="btn-primary" type="submit" [disabled]="enviando()">Guardar Suscriptor</button>
+          <button class="btn-primary" type="submit" [disabled]="enviando()">Guardar</button>
         </div>
       </form>
     </div>
   </div>
 }
+

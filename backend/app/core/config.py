@@ -13,6 +13,9 @@ class Settings(BaseSettings):
         "http://localhost:59178",
         "*",
     ]
+    stripe_secret_key: str = ""
+    frontend_url: str = "http://localhost:4200"
+
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),

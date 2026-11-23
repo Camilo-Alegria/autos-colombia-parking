@@ -7,6 +7,7 @@ from app.api import (
     clientes,
     dashboard,
     operarios,
+    pagos,
     registros,
     tipos,
     usuarios,
@@ -24,4 +25,6 @@ api_router.include_router(vehiculos.router, prefix="/vehiculos", tags=["vehiculo
 api_router.include_router(celdas.router, prefix="/celdas", tags=["celdas"])
 api_router.include_router(operarios.router, prefix="/operarios", tags=["operarios"])
 api_router.include_router(registros.router, prefix="/registros", tags=["registros"])
+api_router.include_router(pagos.router, prefix="", tags=["pagos"])
+
 

@@ -89,6 +89,7 @@ export interface SuscriptorCreate {
   color: string;
   estado_pago: string;
   idTipo: number;
+  password?: string;
 }
 
 export interface IngresoCreate {
@@ -164,4 +165,52 @@ export interface TokenResponse {
   usuario: string;
   rol: string;
 }
+
+export interface Pago {
+  id_pago: number;
+  id_vehiculo: number;
+  monto: number;
+  metodo_pago: string;
+  referencia_pasarela: string | null;
+  estado: string;
+  fecha_pago: string;
+}
+
+export interface VehiculoEstadoCuenta {
+  idVehiculo: number;
+  placa: string;
+  marca: string;
+  modelo: string;
+  color: string;
+  dia_corte: number | null;
+  fecha_vencimiento: string | null;
+  estado_pago: string;
+  estado_semaforo: string;
+  tarifa: number;
+  historial_pagos: Pago[];
+}
+
+export interface ClienteEstadoCuenta {
+  cedula: string;
+  nombre: string;
+  vehiculos: VehiculoEstadoCuenta[];
+}
+
+export interface VehiculoClienteCreatePayload {
+  cedula: string;
+  nombre: string;
+  telefono: string;
+  password: string;
+  placa: string;
+  idTipo: number;
+  marca: string;
+  modelo: string;
+  color: string;
+}
+
+export interface PagoPresencialPayload {
+  placa: string;
+  id_operario?: number | null;
+}
+
 

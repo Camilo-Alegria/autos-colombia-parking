@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { AuthService } from '../services/auth.service';
 import { mensajeApi } from '../utils/formatters';
@@ -11,6 +12,7 @@ import { mensajeApi } from '../utils/formatters';
 })
 export class LoginPage {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   usuario = '';
   password = '';
   cargando = signal(false);
@@ -25,6 +27,12 @@ export class LoginPage {
     this.error.set(null);
     try {
       await this.auth.login({ usuario: this.usuario.trim(), password: this.password });
+      
+      if (this.auth.isClient()) {
+        void this.router.navigate(['/cliente']);
+      } else {
+        void this.router.navigate(['/dashboard']);
+      }
     } catch (err) {
       this.error.set(mensajeApi(err));
     } finally {
@@ -32,3 +40,4 @@ export class LoginPage {
     }
   }
 }
+

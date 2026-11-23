@@ -22,31 +22,34 @@
             }
           </div>
         </div>
-        <nav class="flex flex-wrap gap-2">
-          @for (tab of [
-            { path: '/dashboard', label: 'Dashboard & Celdas' },
-            { path: '/entrada', label: 'Registrar Entrada' },
-            { path: '/salida', label: 'Registrar Salida' },
-            ...(auth.isAdmin() ? [
-              { path: '/editar', label: 'Reasignar' },
-              { path: '/admin', label: 'Funciones de Administrador' }
-            ] : [
-              { path: '/editar', label: 'Reasignar' }
-            ])
-          ]; track tab.path) {
-            <a
-              [routerLink]="tab.path"
-              routerLinkActive
-              #rla="routerLinkActive"
-              class="rounded-full border px-4 py-2 text-sm font-medium transition"
-              [class]="rla.isActive
-                ? 'border-sky-400 bg-sky-500 text-slate-950'
-                : 'border-slate-700 text-slate-200 hover:border-sky-400 hover:text-white'"
-            >
-              {{ tab.label }}
-            </a>
-          }
-        </nav>
+        @if (!auth.isClient()) {
+          <nav class="flex flex-wrap gap-2">
+            @for (tab of [
+              { path: '/dashboard', label: 'Dashboard & Celdas' },
+              { path: '/entrada', label: 'Registrar Entrada' },
+              { path: '/salida', label: 'Registrar Salida' },
+              { path: '/pagos', label: 'Pagos' },
+              ...(auth.isAdmin() ? [
+                { path: '/editar', label: 'Reasignar' },
+                { path: '/admin', label: 'Funciones de Administrador' }
+              ] : [
+                { path: '/editar', label: 'Reasignar' }
+              ])
+            ]; track tab.path) {
+              <a
+                [routerLink]="tab.path"
+                routerLinkActive
+                #rla="routerLinkActive"
+                class="rounded-full border px-4 py-2 text-sm font-medium transition"
+                [class]="rla.isActive
+                  ? 'border-sky-400 bg-sky-500 text-slate-950'
+                  : 'border-slate-700 text-slate-200 hover:border-sky-400 hover:text-white'"
+              >
+                {{ tab.label }}
+              </a>
+            }
+          </nav>
+        }
       </div>
     </header>
 
@@ -71,4 +74,5 @@
     </main>
   </div>
 }
+
 

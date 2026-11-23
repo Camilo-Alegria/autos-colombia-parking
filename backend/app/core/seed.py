@@ -11,6 +11,19 @@ TARIFA_CARRO = 250_000
 TARIFA_MOTO = 100_000
 
 
+from sqlalchemy import inspect, text
+from sqlalchemy.orm import Session
+
+from app.core.database import Base, engine
+from app.core.security import hash_password
+from app.models.celda import Celda
+from app.models.tipo import Tipo
+from app.models.usuario import Usuario
+
+TARIFA_CARRO = 250_000
+TARIFA_MOTO = 100_000
+
+
 def ensure_schema() -> None:
     Base.metadata.create_all(bind=engine)
     inspector = inspect(engine)
@@ -28,11 +41,22 @@ def ensure_schema() -> None:
                 conexion.execute(text("ALTER TABLE vehiculos ADD COLUMN modelo VARCHAR(40) NOT NULL DEFAULT ''"))
             if "estado_pago" not in cols:
                 conexion.execute(text("ALTER TABLE vehiculos ADD COLUMN estado_pago VARCHAR(20) NOT NULL DEFAULT 'AL_DIA'"))
+            if "dia_corte" not in cols:
+                conexion.execute(text("ALTER TABLE vehiculos ADD COLUMN dia_corte INTEGER"))
+            if "fecha_vencimiento" not in cols:
+                conexion.execute(text("ALTER TABLE vehiculos ADD COLUMN fecha_vencimiento DATE"))
+            if "id_usuario_cliente" not in cols:
+                conexion.execute(text("ALTER TABLE vehiculos ADD COLUMN id_usuario_cliente INTEGER REFERENCES usuarios(id_usuario)"))
 
         if "celdas" in tables:
             cols = {col["name"] for col in inspector.get_columns("celdas")}
             if "activo" not in cols:
                 conexion.execute(text("ALTER TABLE celdas ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE"))
+
+        if "usuarios" in tables:
+            cols = {col["name"] for col in inspector.get_columns("usuarios")}
+            # Ensure rol column supports CLIENTE (already a String column)
+
 
 
 def seed_datos_iniciales(db: Session) -> None:

@@ -4,16 +4,22 @@ import { Observable } from 'rxjs';
 
 import {
   Celda,
+  ClienteEstadoCuenta,
   ClienteResumen,
   ClienteUpdate,
   Dashboard,
   IngresoCreate,
+  Pago,
+  PagoPresencialPayload,
   RegistroResumen,
   SuscriptorCreate,
   Tipo,
+  VehiculoClienteCreatePayload,
   VehiculoDetalle,
+  VehiculoEstadoCuenta,
   VehiculoUpdate,
 } from '../models/parking.models';
+
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -82,7 +88,40 @@ export class ApiService {
     );
   }
 
+  registrarVehiculoCliente(payload: VehiculoClienteCreatePayload): Observable<VehiculoEstadoCuenta> {
+    return this.http.post<VehiculoEstadoCuenta>(`${this.base}/vehiculos-clientes`, payload);
+  }
+
+  consultarPropietario(cedula: string): Observable<{ existe: boolean; nombre: string; telefono: string }> {
+    return this.http.get<{ existe: boolean; nombre: string; telefono: string }>(`${this.base}/vehiculos-clientes/propietario/${cedula.trim()}`);
+  }
+
+  consultarVehiculoPlaca(placa: string): Observable<VehiculoEstadoCuenta> {
+    return this.http.get<VehiculoEstadoCuenta>(`${this.base}/placa/${encodeURIComponent(placa.trim().toUpperCase())}`);
+  }
+
+  registrarPagoPresencial(payload: PagoPresencialPayload): Observable<Pago> {
+    return this.http.post<Pago>(`${this.base}/pagos/presencial`, payload);
+  }
+
+  crearPreferenciaPago(placa: string): Observable<{ init_point: string; preference_id: string }> {
+    return this.http.post<{ init_point: string; preference_id: string }>(`${this.base}/online/preferencia`, { placa });
+  }
+
+  confirmarPagoOnline(placa: string, payment_id: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/online/confirmar`, { placa, payment_id });
+  }
+
+  obtenerEstadoCuentaCliente(cedula?: string): Observable<ClienteEstadoCuenta> {
+    let params = new HttpParams();
+    if (cedula?.trim()) {
+      params = params.set('cedula', cedula.trim());
+    }
+    return this.http.get<ClienteEstadoCuenta>(`${this.base}/cliente/estado-cuenta`, { params });
+  }
   eliminarCelda(idCelda: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/celdas/${idCelda}`);
   }
 }
+
+
