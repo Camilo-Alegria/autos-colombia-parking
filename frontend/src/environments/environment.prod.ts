@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://AUTOS-COLOMBIA-BACKEND.onrender.com/api'
+  apiUrl: 'https://autos-colombia-api.onrender.com/'
 };
