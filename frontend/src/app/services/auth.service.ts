@@ -8,7 +8,7 @@ import { LoginRequest, TokenResponse, Usuario } from '../models/parking.models';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl.replace('/api', '');
+  private readonly base = environment.apiUrl;
 
   readonly token = signal<string | null>(localStorage.getItem('token'));
   readonly usuario = signal<Usuario | null>(null);
@@ -48,5 +48,3 @@ export class AuthService {
     this.usuario.set(null);
   }
 }
-
-

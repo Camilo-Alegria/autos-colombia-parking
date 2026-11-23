@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { ParkingStore } from './parking.store';
-import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
@@ -9,12 +8,8 @@ export class WebSocketService {
 
   conectar(): void {
     if (this.socket) return;
-    
-    // Convertir http/https de apiUrl a ws/wss
-    const apiUrl = environment.apiUrl;
-    const wsBase = apiUrl.replace(/^http/, 'ws');
-    const wsUrl = `${wsBase.replace(/\/api$/, '')}/ws/celdas`;
-    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/celdas`;
     try {
       this.socket = new WebSocket(wsUrl);
       this.socket.onmessage = (event) => {
