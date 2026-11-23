@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 import {
   Celda,
@@ -20,11 +21,10 @@ import {
   VehiculoUpdate,
 } from '../models/parking.models';
 
-
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = '/api';
+  private readonly base = environment.apiUrl;
 
   obtenerDashboard(): Observable<Dashboard> {
     return this.http.get<Dashboard>(`${this.base}/dashboard/`);
@@ -81,7 +81,10 @@ export class ApiService {
     return this.http.put<ClienteResumen>(`${this.base}/clientes/${idCliente}`, payload);
   }
 
-  actualizarVehiculo(idVehiculo: number, payload: VehiculoUpdate): Observable<VehiculoUpdate & { idVehiculo: number }> {
+  actualizarVehiculo(
+    idVehiculo: number,
+    payload: VehiculoUpdate,
+  ): Observable<VehiculoUpdate & { idVehiculo: number }> {
     return this.http.put<VehiculoUpdate & { idVehiculo: number }>(
       `${this.base}/vehiculos/${idVehiculo}`,
       payload,
@@ -92,24 +95,36 @@ export class ApiService {
     return this.http.post<VehiculoEstadoCuenta>(`${this.base}/vehiculos-clientes`, payload);
   }
 
-  consultarPropietario(cedula: string): Observable<{ existe: boolean; nombre: string; telefono: string }> {
-    return this.http.get<{ existe: boolean; nombre: string; telefono: string }>(`${this.base}/vehiculos-clientes/propietario/${cedula.trim()}`);
+  consultarPropietario(
+    cedula: string,
+  ): Observable<{ existe: boolean; nombre: string; telefono: string }> {
+    return this.http.get<{ existe: boolean; nombre: string; telefono: string }>(
+      `${this.base}/vehiculos-clientes/propietario/${cedula.trim()}`,
+    );
   }
 
   consultarVehiculoPlaca(placa: string): Observable<VehiculoEstadoCuenta> {
-    return this.http.get<VehiculoEstadoCuenta>(`${this.base}/placa/${encodeURIComponent(placa.trim().toUpperCase())}`);
+    return this.http.get<VehiculoEstadoCuenta>(
+      `${this.base}/placa/${encodeURIComponent(placa.trim().toUpperCase())}`,
+    );
   }
 
   registrarPagoPresencial(payload: PagoPresencialPayload): Observable<Pago> {
-    return this.http.post<Pago>(`${this.base}/pagos/presencial`, payload);
+    return this.http.post<Pago>(`${this.base}/presencial`, payload);
   }
 
   crearPreferenciaPago(placa: string): Observable<{ init_point: string; preference_id: string }> {
-    return this.http.post<{ init_point: string; preference_id: string }>(`${this.base}/online/preferencia`, { placa });
+    return this.http.post<{ init_point: string; preference_id: string }>(
+      `${this.base}/online/preferencia`,
+      { placa },
+    );
   }
 
   confirmarPagoOnline(placa: string, payment_id: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.base}/online/confirmar`, { placa, payment_id });
+    return this.http.post<{ message: string }>(`${this.base}/online/confirmar`, {
+      placa,
+      payment_id,
+    });
   }
 
   obtenerEstadoCuentaCliente(cedula?: string): Observable<ClienteEstadoCuenta> {
@@ -119,9 +134,8 @@ export class ApiService {
     }
     return this.http.get<ClienteEstadoCuenta>(`${this.base}/cliente/estado-cuenta`, { params });
   }
+
   eliminarCelda(idCelda: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/celdas/${idCelda}`);
   }
 }
-
-
